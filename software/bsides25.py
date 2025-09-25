@@ -1236,8 +1236,6 @@ async def main():
     setup_buttons()
     load_params()
     show_bsides_logo(oled)
-    print("wri6 font height:", wri6.font.height())
-    print("OLED size:", oled.width, "x", oled.height)
     print("Username: {}".format(USERNAME))
 
     await asyncio.gather(ui_task(oled), inactivity_task(oled), neopixel_task(np))
