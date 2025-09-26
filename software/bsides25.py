@@ -18,6 +18,10 @@ import writer.freesans20 as freesans20
 import writer.font10 as font10
 import writer.font6 as font6
 
+# Matrix rainfall
+from lib.screensaver_matrix_nb import init_state as matrix_init, draw_step as matrix_step
+
+
 # -----------------------
 # Settings
 # -----------------------
@@ -73,6 +77,8 @@ wri20 = Writer(oled, freesans20, verbose=False)
 
 username_wri = wri20
 username_lines = None
+
+_matrix_state = None
 
 # -----------------------
 # Parameters
@@ -1147,9 +1153,14 @@ async def ui_task(oled):
             screen.render()
 
 def show_bsides_logo(oled):
-    oled.fill(0)
-    oled.blit(bsides_logo.fb, 0, 0)
-    oled.show()
+    # oled.fill(0)
+    # oled.blit(bsides_logo.fb, 0, 0)
+    # oled.show()
+    # Use /lib non-blocking Matrix saver (one frame per call)
+    global _matrix_state
+    if _matrix_state is None:
+        _matrix_state = matrix_init(oled.width, oled.height)
+    _matrix_state = matrix_step(oled, _matrix_state, bottom_guard=8)
 
 def wrap_text(text, writer, max_width, max_height):
     line_height = writer.font.height()
