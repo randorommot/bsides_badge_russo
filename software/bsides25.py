@@ -19,8 +19,9 @@ import writer.font10 as font10
 import writer.font6 as font6
 
 # Matrix rainfall
-from lib.screensaver_matrix_nb import init_state as matrix_init, draw_step as matrix_step
-
+from lib.screensaver_matrix_nb  import init_state as matrix_init,  draw_step as matrix_step
+from lib.screensaver_bounce_nb  import init_state as bounce_init,  draw_step as bounce_step
+from lib.screensaver_marquee_nb import init_state as marquee_init, draw_step as marquee_step
 
 # -----------------------
 # Settings
@@ -78,7 +79,13 @@ wri20 = Writer(oled, freesans20, verbose=False)
 username_wri = wri20
 username_lines = None
 
-_matrix_state = None
+# Choose which idle saver to render (one frame per idle tick)
+INACTIVITY_SAVER = "bounce"   # "matrix" | "bounce" | "marquee"
+
+_matrix_state  = None
+_bounce_state  = None
+_marquee_state = None
+
 
 # -----------------------
 # Parameters
@@ -1157,10 +1164,34 @@ def show_bsides_logo(oled):
     # oled.blit(bsides_logo.fb, 0, 0)
     # oled.show()
     # Use /lib non-blocking Matrix saver (one frame per call)
-    global _matrix_state
-    if _matrix_state is None:
-        _matrix_state = matrix_init(oled.width, oled.height)
-    _matrix_state = matrix_step(oled, _matrix_state, bottom_guard=8)
+    global _matrix_state, _bounce_state, _marquee_state
+
+    if INACTIVITY_SAVER == "matrix":
+        if _matrix_state is None:
+            _matrix_state = matrix_init(oled.width, oled.height)
+        _matrix_state = matrix_step(oled, _matrix_state, bottom_guard=8)
+
+    elif INACTIVITY_SAVER == "bounce":
+        if _bounce_state is None:
+            _bounce_state = bounce_init(oled.width, oled.height)
+        _bounce_state = bounce_step(oled, _bounce_state, bottom_guard=8)
+
+    elif INACTIVITY_SAVER == "marquee":
+        if _marquee_state is None:
+            # Use USERNAME if present; fallback to HELLO
+            msg = (USERNAME or "HELLO")
+            _marquee_state = marquee_init(oled.width, oled.height, message=msg, speed_px=1)
+        _marquee_state = marquee_step(oled, _marquee_state)
+
+    else:
+        # Minimal fallback
+        oled.fill(0)
+        txt = "IDLE"
+        x = (oled.width - wri10.stringlen(txt)) // 2
+        y = (oled.height - wri10.font.height()) // 2
+        wri10.set_textpos(oled, y, x)
+        wri10.printstring(txt)
+        oled.show()
 
 def wrap_text(text, writer, max_width, max_height):
     line_height = writer.font.height()
